@@ -17,8 +17,26 @@ st.header("2. Dataset overview")
 
 @st.cache_data
 def load():
-    s = pd.read_csv("train_signals.csv", parse_dates=["signal_sanasi"])
-    t = pd.read_parquet("train_transactions.parquet")
+    # Try real files first (in case uploaded alongside app.py), otherwise use demo data
+    try:
+        s = pd.read_csv("train_signals.csv", parse_dates=["signal_sanasi"])
+        t = pd.read_parquet("train_transactions.parquet")
+    except Exception:
+        np.random.seed(42)
+        n_sig, n_tx = 800, 6000
+        s = pd.DataFrame({
+            "signal_id": [f"SG_{i:06d}" for i in range(n_sig)],
+            "signal_sanasi": pd.date_range("2025-01-01", periods=n_sig, freq="6h"),
+        })
+        s["eskalatsiya"] = np.random.binomial(1, 0.18, n_sig)
+        t = pd.DataFrame({
+            "signal_id": np.random.choice(s.signal_id, n_tx),
+            "tranzaksiya_vaqti": pd.date_range("2024-10-01", periods=n_tx, freq="15min"),
+            "kirim_chiqim": np.random.choice(["kirim", "chiqim"], n_tx),
+            "tranzaksiya_turi": np.random.choice(["karta", "bank_otkazmasi", "naqd", "xalqaro"], n_tx, p=[.5, .25, .15, .10]),
+            "miqdor_indeksi": np.random.lognormal(0, 1, n_tx),
+        })
+        st.info("Showing demo data. Real dataset not bundled with this app.")
     return s, t
 
 tr_sig, tr_tx = load()
